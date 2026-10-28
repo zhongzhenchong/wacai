@@ -1,26 +1,16 @@
-/*
- * 挖财记账 VIP 解锁脚本 (GitHub 版)
- * 适用: APP v13.1.7
- * 说明: 本脚本基于抓包结果，精确覆盖 isVip 等相关字段。
- */
-
-
 let obj;
 try {
     obj = JSON.parse($response.body);
 } catch (e) {
-    // 非 JSON 响应，直接放行
-    $done({});
-    return;
+    $done({}); return;
 }
 
 const url = $request.url;
-const EXPIRATION = 4092599349000; // 远期时间戳
+const EXPIRATION = 4092599349000; // 远期时间戳（永久）
 
-// 记录日志，方便在 Quantumult X 中排查问题
 console.log("【挖财脚本】命中: " + url);
 
-/* ========== 1. 核心目标：用户信息接口 isVip 0 -> 1 ========== */
+// 1. 用户信息接口：isVip 0 -> 1
 if (/usercenter\/userInfo/.test(url)) {
     if (obj.data) {
         obj.data.isVip = 1;
@@ -28,26 +18,13 @@ if (/usercenter\/userInfo/.test(url)) {
     }
 }
 
-/* ========== 2. 「我的」接口：注入 vipInfo ========== */
-if (/\/api\/my\/v\d/.test(url)) {
-    if (obj.data) {
-        obj.data.vipInfo = {
-            "vipMemberType": "挖财记账超级年会员",
-            "isVipMember": true,
-            "expirationDate": EXPIRATION,
-            "continuous": true,
-            "remainingDays": 365,
-            "consecutiveDays": 365
-        };
-        console.log("【挖财脚本】my.vipInfo 已注入");
-    }
-}
-
-/* ========== 3. 会员中心接口：注入完整 VIP 字段 ========== */
-if (/(vipmember\/v\d\/index|jz-activity\/bkk-frontier\/api\/vipmember\/v\d\/index)/.test(url)) {
+// 2. 核心：会员中心接口注入 (兼容 /vipmember/index 和 /vipmember/v2/index)
+if (/vipmember\/(v\d+\/)?index|vipmember\/privilege/.test(url)) {
     if (obj.data) {
         obj.data.vipInfo = {
             ...(obj.data.vipInfo || {}),
+            "vipMemberType": "挖财记账超级年会员",
+            "isVipMember": true,
             "adFreeVipEnable": 1,
             "supportadFreeVip": 1,
             "adFreePermanentVip": true,
@@ -60,14 +37,29 @@ if (/(vipmember\/v\d\/index|jz-activity\/bkk-frontier\/api\/vipmember\/v\d\/inde
             "isPermanentVip": true,
             "freeSendAdFreeVipEnable": 0,
             "vipType": 2,
-            "expireDaysDays": 365,
+            "expireDaysDays": 3650,
             "freeSendVipEnable": 0
         };
-        console.log("【挖财脚本】vipmember.vipInfo 已注入");
+        console.log("【挖财脚本】vipmember 会员字段已注入");
     }
 }
 
-/* ========== 4. 兜底：任何响应中出现的 isVip 等字段 ========== */
+// 3. 「我的」接口：注入 vipInfo
+if (/\/api\/my\/v\d/.test(url)) {
+    if (obj.data) {
+        obj.data.vipInfo = {
+            "vipMemberType": "挖财记账超级年会员",
+            "isVipMember": true,
+            "expirationDate": EXPIRATION,
+            "continuous": true,
+            "remainingDays": 3650,
+            "consecutiveDays": 3650
+        };
+        console.log("【挖财脚本】my.vipInfo 已注入");
+    }
+}
+
+// 4. 强力兜底：遍历所有响应，遇到 VIP 字段全部强改
 function deepFix(node) {
     if (node === null || typeof node !== 'object') return;
     for (let k in node) {
@@ -77,8 +69,12 @@ function deepFix(node) {
 
         if (lk === 'isvip') {
             node[k] = 1;
-        } else if (/^(is_?vip_?member|is_?member)$/.test(lk)) {
+        } else if (/^(is_?vip_?member|is_?member|vip_?member_?enable)$/.test(lk)) {
             node[k] = true;
+        } else if (/^(vip_?type|vip_?level|member_?level)$/.test(lk)) {
+            node[k] = 2; 
+        } else if (/^(expire_?date|expire_?time|super_?expire_?date|adfree_?expire_?date)$/.test(lk)) {
+            node[k] = EXPIRATION;
         } else if (typeof v === 'object') {
             deepFix(v);
         }
