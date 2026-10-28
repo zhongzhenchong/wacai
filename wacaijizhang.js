@@ -3,6 +3,13 @@
  * 适用: APP v13.1.7
  * 说明: 本脚本基于抓包结果，精确覆盖 isVip 等相关字段。
  */
+[rewrite_local]
+^https?:\/\/jz\.wacaijizhang\.com\/api\/usercenter\/userInfo url script-response-body wacai.js
+^https?:\/\/jz\.wacaijizhang\.com\/api\/my\/v\d url script-response-body wacai.js
+^https?:\/\/jz\.wacaijizhang\.com\/(api\/vipmember\/v\d\/index|jz-activity\/bkk-frontier\/api\/vipmember\/v\d\/index) url script-response-body wacai.js
+
+[mitm]
+hostname = jz.wacaijizhang.com
 
 let obj;
 try {
