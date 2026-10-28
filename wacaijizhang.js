@@ -16,7 +16,7 @@ if (/usercenter\/userInfo/.test(url)) {
         obj.data.isVip = 1;
         obj.data.isVipMember = true;
         obj.data.vipType = 2;
-        obj.data.vipMemberType = "年费会员";
+        obj.data.vipMemberType = "超级会员";
         obj.data.expirationDate = EXPIRATION;
         obj.data.vipExpireDate = EXPIRATION;
         console.log("【挖财脚本】userInfo 会员字段已注满");
@@ -28,7 +28,7 @@ if (/\/api\/my\/v\d/.test(url)) {
     if (obj.data) {
         obj.data.isVip = 1;
         obj.data.vipInfo = {
-            "vipMemberType": "年费会员",
+            "vipMemberType": "超级会员",
             "isVipMember": true,
             "expirationDate": EXPIRATION,
             "remainingDays": 3650,
@@ -51,7 +51,7 @@ if (/vipmember\/index\/sign/.test(url)) {
             
             // 强行注入会员类型标识（这是之前缺失的关键！）
             innerData.vipType = 2;
-            innerData.vipMemberType = "年费会员";
+            innerData.vipMemberType = "超级会员";
             innerData.isVip = true;
             innerData.isVipMember = true;
             
